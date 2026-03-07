@@ -1,0 +1,27 @@
+{
+  "language": "java",
+  "keywords": {
+    "color": "#7400B8",
+    "bold": true,
+    "italic": false
+  },
+  "comments": {
+    "color": "#3D7A00",
+    "bold": false,
+    "italic": true
+  },
+  "strings": {
+    "color": "#BC0000",
+    "bold": false,
+    "italic": false
+  },
+  "identifiers": {
+    "color": "#000000",
+    "bold": false,
+    "italic": false
+  },
+  "use_background": false,
+  "background_color": "#F8F8F8",
+  "font_size": "small",
+  "use_identifier_color": false
+}

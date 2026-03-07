@@ -1,0 +1,27 @@
+{
+  "language": "python",
+  "keywords": {
+    "color": "#0055CC",
+    "bold": true,
+    "italic": false
+  },
+  "comments": {
+    "color": "#408040",
+    "bold": false,
+    "italic": true
+  },
+  "strings": {
+    "color": "#BB4400",
+    "bold": false,
+    "italic": false
+  },
+  "identifiers": {
+    "color": "#000000",
+    "bold": false,
+    "italic": false
+  },
+  "use_background": false,
+  "background_color": "#F8F8F8",
+  "font_size": "small",
+  "use_identifier_color": false
+}

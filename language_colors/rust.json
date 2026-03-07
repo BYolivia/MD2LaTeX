@@ -1,0 +1,27 @@
+{
+  "language": "rust",
+  "keywords": {
+    "color": "#7C3AED",
+    "bold": true,
+    "italic": false
+  },
+  "comments": {
+    "color": "#6B7280",
+    "bold": false,
+    "italic": true
+  },
+  "strings": {
+    "color": "#DC2626",
+    "bold": false,
+    "italic": false
+  },
+  "identifiers": {
+    "color": "#000000",
+    "bold": false,
+    "italic": false
+  },
+  "use_background": false,
+  "background_color": "#F8F8F8",
+  "font_size": "small",
+  "use_identifier_color": false
+}
