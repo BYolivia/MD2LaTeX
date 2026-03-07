@@ -109,10 +109,11 @@ class MdEditorView:
     # Retraso (ms) antes de actualizar el preview tras teclear
     _DEBOUNCE_MS = 300
 
-    def __init__(self, parent: tk.Widget):
+    def __init__(self, parent: tk.Widget, highlighter=None):
         self.frame = tk.Frame(parent, bg=self.BG_MAIN)
         self._controller = None
         self._debounce_id = None
+        self._ext_highlighter = highlighter  # MdHighlighter externo (colores configurables)
         self._build_ui()
 
     def set_controller(self, controller):
@@ -249,6 +250,9 @@ class MdEditorView:
         )
         self._editor.grid(row=1, column=1, sticky=tk.NSEW, pady=(0, 4))
         self._apply_syntax_tags()
+        # Si hay un highlighter externo (colores configurables), configurar sus tags
+        if self._ext_highlighter:
+            self._ext_highlighter.configure_tags(self._editor)
 
         vscroll = ttk.Scrollbar(
             editor_outer, orient=tk.VERTICAL, command=self._sync_scroll_y
@@ -335,17 +339,31 @@ class MdEditorView:
         e.tag_configure("list_mark", foreground="#fab387")
 
     def _highlight_syntax(self):
+        """Aplica resaltado de sintaxis. Usa el highlighter externo si está disponible."""
+        if self._ext_highlighter:
+            self._ext_highlighter.highlight(self._editor)
+        else:
+            self._highlight_syntax_builtin()
+
+    def reload_highlighter(self, md_colors):
+        """Actualiza el highlighter externo con nuevos colores y re-aplica los tags."""
+        if self._ext_highlighter:
+            self._ext_highlighter.update_colors(md_colors)
+            self._ext_highlighter.configure_tags(self._editor)
+            self._ext_highlighter.highlight(self._editor)
+
+    def _highlight_syntax_builtin(self):
+        """Resaltado con colores fijos (fallback sin highlighter externo)."""
         import re
         e = self._editor
-        # Limpiar todos los tags
         for tag in ("heading", "bold", "italic", "code", "codeblock",
                     "link", "quote", "hr", "list_mark"):
             e.tag_remove(tag, "1.0", tk.END)
 
         content = e.get("1.0", tk.END)
         lines = content.split("\n")
-
         in_code_block = False
+
         for i, line in enumerate(lines):
             lineno = i + 1
             start = f"{lineno}.0"
@@ -355,45 +373,26 @@ class MdEditorView:
                 in_code_block = not in_code_block
                 e.tag_add("codeblock", start, end)
                 continue
-
             if in_code_block:
                 e.tag_add("codeblock", start, end)
                 continue
-
-            # Encabezados
             if re.match(r"^#{1,6}\s", line):
                 e.tag_add("heading", start, end)
                 continue
-
-            # Blockquote
             if line.startswith("> "):
                 e.tag_add("quote", start, end)
                 continue
-
-            # Línea horizontal
             if re.match(r"^(\s*[-*_]){3,}\s*$", line):
                 e.tag_add("hr", start, end)
                 continue
-
-            # Marcadores de lista
             for m in re.finditer(r"^(\s*[*\-+]|\s*\d+\.)\s", line):
-                s = f"{lineno}.{m.start()}"
-                en = f"{lineno}.{m.end()}"
-                e.tag_add("list_mark", s, en)
-
-            # Negrita **...**
+                e.tag_add("list_mark", f"{lineno}.{m.start()}", f"{lineno}.{m.end()}")
             for m in re.finditer(r"\*\*[^*]+\*\*|__[^_]+__", line):
                 e.tag_add("bold", f"{lineno}.{m.start()}", f"{lineno}.{m.end()}")
-
-            # Itálica *...*
             for m in re.finditer(r"(?<!\*)\*[^*]+\*(?!\*)|(?<!_)_[^_]+_(?!_)", line):
                 e.tag_add("italic", f"{lineno}.{m.start()}", f"{lineno}.{m.end()}")
-
-            # Código inline `...`
             for m in re.finditer(r"`[^`]+`", line):
                 e.tag_add("code", f"{lineno}.{m.start()}", f"{lineno}.{m.end()}")
-
-            # Enlace [...](...) o imagen
             for m in re.finditer(r"!?\[.*?\]\(.*?\)", line):
                 e.tag_add("link", f"{lineno}.{m.start()}", f"{lineno}.{m.end()}")
 

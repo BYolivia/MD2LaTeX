@@ -1,0 +1,12 @@
+{
+  "command": "#89b4fa",
+  "command_bold": false,
+  "environment": "#fab387",
+  "environment_bold": true,
+  "math": "#89dceb",
+  "comment": "#6c7086",
+  "comment_italic": true,
+  "braces": "#f5c2e7",
+  "brackets": "#f9e2af",
+  "special": "#cba6f7"
+}

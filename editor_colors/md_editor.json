@@ -1,0 +1,16 @@
+{
+  "heading": "#89b4fa",
+  "heading_bold": true,
+  "bold_text": "#f5c2e7",
+  "italic_text": "#f9e2af",
+  "inline_code": "#a6e3a1",
+  "inline_code_bg": "#11111b",
+  "code_block": "#a6e3a1",
+  "code_block_bg": "#11111b",
+  "link": "#89dceb",
+  "quote": "#a6adc8",
+  "quote_italic": true,
+  "hr_color": "#45475a",
+  "list_marker": "#fab387",
+  "strikethrough": "#6c7086"
+}

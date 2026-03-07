@@ -4,6 +4,9 @@ import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 from view.md_editor import MdEditorView
 from view.language_colors_tab import LanguageColorsTab
+from view.editor_colors_form import EditorColorsForm
+from view.syntax_highlighter import MdHighlighter, LatexHighlighter, HtmlHighlighter
+from model.editor_color_config import load_all_editor_colors
 
 
 class MainWindow:
@@ -70,13 +73,19 @@ class MainWindow:
         self._notebook = ttk.Notebook(self.root, style="App.TNotebook")
         self._notebook.pack(fill=tk.BOTH, expand=True)
 
+        # Cargar configs de colores de editor
+        md_c, ltx_c, html_c = load_all_editor_colors()
+        self._md_hl   = MdHighlighter(md_c)
+        self._ltx_hl  = LatexHighlighter(ltx_c)
+        self._html_hl = HtmlHighlighter(html_c)
+
         # Pestaña 1: Conversor MD ↔ LaTeX
         conv_frame = tk.Frame(self._notebook, bg=self.BG_MAIN)
         self._notebook.add(conv_frame, text="  MD \u2194 LaTeX  ")
         self._build_converter_tab(conv_frame)
 
         # Pestaña 2: Editor MD con preview
-        self.md_editor = MdEditorView(self._notebook)
+        self.md_editor = MdEditorView(self._notebook, self._md_hl)
         self._notebook.add(self.md_editor.frame, text="  Editor MD  ")
 
         # Pestaña 3: MD → HTML
@@ -84,9 +93,10 @@ class MainWindow:
         self._notebook.add(html_frame, text="  MD \u2192 HTML  ")
         self._build_html_tab(html_frame)
 
-        # Pestaña 4: Colores de lenguajes
-        self.lang_colors_tab = LanguageColorsTab(self._notebook)
-        self._notebook.add(self.lang_colors_tab.frame, text="  Colores  ")
+        # Pestaña 4: Colores (lenguajes lstlisting + editores)
+        colors_frame = tk.Frame(self._notebook, bg=self.BG_MAIN)
+        self._notebook.add(colors_frame, text="  Colores  ")
+        self._build_colors_tab(colors_frame)
 
     # ------------------------------------------------------------------
     # Pestaña conversor MD ↔ LaTeX
@@ -138,11 +148,13 @@ class MainWindow:
         )
         paned.pack(fill=tk.BOTH, expand=True, padx=8, pady=6)
 
-        md_panel = _Panel(paned, "Markdown", self.FG_LABEL_MD, self)
+        md_panel = _Panel(paned, "Markdown", self.FG_LABEL_MD, self,
+                          highlighter=self._md_hl)
         self._md_text = md_panel
         paned.add(md_panel.frame, minsize=300)
 
-        latex_panel = _Panel(paned, "LaTeX", self.FG_LABEL_LATEX, self)
+        latex_panel = _Panel(paned, "LaTeX", self.FG_LABEL_LATEX, self,
+                             highlighter=self._ltx_hl)
         self._latex_text = latex_panel
         paned.add(latex_panel.frame, minsize=300)
 
@@ -284,6 +296,47 @@ class MainWindow:
         ).pack(fill=tk.X)
 
     # ------------------------------------------------------------------
+    # Pestaña Colores (lenguajes lstlisting + colores de editor)
+    # ------------------------------------------------------------------
+
+    def _build_colors_tab(self, parent: tk.Frame):
+        style = ttk.Style()
+        style.configure("Colors.TNotebook", background=self.BG_MAIN, borderwidth=0)
+        style.configure("Colors.TNotebook.Tab", background=self.BG_PANEL,
+                        foreground=self.FG_STATUS, padding=[12, 5], font=("Helvetica", 10))
+        style.map("Colors.TNotebook.Tab",
+                  background=[("selected", self.BG_MAIN)],
+                  foreground=[("selected", self.FG_TEXT)])
+
+        nb = ttk.Notebook(parent, style="Colors.TNotebook")
+        nb.pack(fill=tk.BOTH, expand=True)
+
+        # Sub-pestaña 1: Lenguajes lstlisting
+        self.lang_colors_tab = LanguageColorsTab(nb)
+        nb.add(self.lang_colors_tab.frame, text="  Lenguajes LaTeX  ")
+
+        # Sub-pestaña 2: Colores de los editores
+        self.editor_colors_form = EditorColorsForm(nb)
+        nb.add(self.editor_colors_form.frame, text="  Colores de editor  ")
+
+        # Cuando el usuario guarde los colores de editor, reconfiguramos los tags
+        self.editor_colors_form.add_on_save(self._apply_editor_colors)
+
+    def _apply_editor_colors(self, md_c, ltx_c, html_c):
+        """Reconfigura los tags de resaltado en todos los paneles."""
+        self._md_hl.update_colors(md_c)
+        self._ltx_hl.update_colors(ltx_c)
+        self._html_hl.update_colors(html_c)
+        # Re-configurar tags en todos los _Panel vivos
+        for panel in (self._md_text, self._latex_text,
+                      self._html_md_text, self._html_out_text):
+            if panel._highlighter:
+                panel._highlighter.configure_tags(panel._text)
+                panel._highlighter.highlight(panel._text)
+        # Re-configurar en el editor MD
+        self.md_editor.reload_highlighter(md_c)
+
+    # ------------------------------------------------------------------
     # Pestaña MD → HTML
     # ------------------------------------------------------------------
 
@@ -316,11 +369,13 @@ class MainWindow:
         )
         paned.pack(fill=tk.BOTH, expand=True, padx=8, pady=6)
 
-        md_panel = _Panel(paned, "Markdown", self.FG_LABEL_MD, self)
+        md_panel = _Panel(paned, "Markdown", self.FG_LABEL_MD, self,
+                          highlighter=self._md_hl)
         self._html_md_text = md_panel
         paned.add(md_panel.frame, minsize=300)
 
-        html_panel = _Panel(paned, "HTML generado", self.FG_LABEL_HTML, self)
+        html_panel = _Panel(paned, "HTML generado", self.FG_LABEL_HTML, self,
+                            highlighter=self._html_hl)
         self._html_out_text = html_panel
         paned.add(html_panel.frame, minsize=300)
 
@@ -470,7 +525,9 @@ class MainWindow:
 class _Panel:
     """Panel reutilizable con etiqueta, área de texto y scrollbars."""
 
-    def __init__(self, parent, label: str, fg_label: str, window: MainWindow):
+    def __init__(self, parent, label: str, fg_label: str, window: MainWindow,
+                 highlighter=None):
+        self._highlighter = highlighter
         self.frame = tk.Frame(parent, bg=window.BG_PANEL)
         self.frame.columnconfigure(0, weight=1)
         self.frame.rowconfigure(1, weight=1)
@@ -509,6 +566,9 @@ class _Panel:
         self._text.bind("<Control-a>", lambda e: MainWindow._select_all(self._text))
         self._text.bind("<Control-A>", lambda e: MainWindow._select_all(self._text))
 
+        if self._highlighter:
+            self._highlighter.configure_tags(self._text)
+
     def get_text(self) -> str:
         return self._text.get("1.0", tk.END).rstrip("\n")
 
@@ -517,11 +577,15 @@ class _Panel:
         self._text.insert("1.0", text)
         self._text.edit_modified(False)
         self._update_info()
+        if self._highlighter:
+            self._highlighter.schedule(self._text)
 
     def _on_modified(self, _event=None):
         if self._text.edit_modified():
             self._update_info()
             self._text.edit_modified(False)
+            if self._highlighter:
+                self._highlighter.schedule(self._text)
 
     def _update_info(self):
         content = self._text.get("1.0", tk.END)
