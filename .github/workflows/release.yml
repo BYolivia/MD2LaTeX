@@ -34,8 +34,8 @@ jobs:
             -v "$PWD:/workspace" \
             -w /workspace \
             ${{ matrix.image }} \
-            bash scripts/build-linux.sh
-          mv dist/md2latex dist/md2latex-linux-${{ matrix.distro }}
+            bash -c "bash scripts/build-linux.sh && mv dist/md2latex dist/md2latex-linux-${{ matrix.distro }}"
+          sudo chown -R "$USER:$USER" dist/
 
       - name: Subir artefacto (${{ matrix.distro }})
         uses: actions/upload-artifact@v4
