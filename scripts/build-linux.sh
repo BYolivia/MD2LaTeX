@@ -13,7 +13,7 @@ elif command -v apt-get &>/dev/null; then
         python3 python3-pip python3-venv python3-tk tk-dev tcl-dev
 
 elif command -v dnf &>/dev/null; then
-    dnf install -y python3 python3-pip python3-tkinter tcl tk
+    dnf install -y python3 python3-pip python3-tkinter tcl tk binutils
 
 else
     echo "ERROR: gestor de paquetes no reconocido" >&2
