@@ -28,7 +28,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: md2latex-linux
-          path: dist/md2latex-linux.tar.gz
+          path: dist/md2latex.bundle
 
   # ── Windows ──────────────────────────────────────────────────────────────────
   build-windows:
@@ -102,14 +102,14 @@ jobs:
 
             | Plataforma | Archivo |
             |---|---|
-            | Linux (universal) | `md2latex-linux.tar.gz` |
+            | Linux (universal) | `md2latex.bundle` |
             | Windows | `md2latex.exe` |
             | macOS | `md2latex-macos` |
 
             ### Linux — instalación
             ```bash
-            tar -xzf md2latex-linux.tar.gz
-            sudo bash install.sh
+            chmod +x md2latex.bundle
+            sudo ./md2latex.bundle
             ```
             Después ejecuta `md2latex` desde cualquier terminal.
 
@@ -119,7 +119,7 @@ jobs:
             ./md2latex-macos
             ```
           files: |
-            dist/md2latex-linux/md2latex-linux.tar.gz
+            dist/md2latex-linux/md2latex.bundle
             dist/md2latex-windows/md2latex.exe
             dist/md2latex-macos/md2latex-macos
           draft: false

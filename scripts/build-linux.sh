@@ -1,5 +1,5 @@
 #!/bin/bash
-# Compila md2latex como bundle (onedir + tar.gz + install.sh).
+# Compila md2latex y genera un .bundle autoextraíble.
 # Detecta el gestor de paquetes automáticamente.
 set -e
 
@@ -44,9 +44,44 @@ echo "==> Compilando con PyInstaller (onedir)..."
     --hidden-import "markdown.extensions.fenced_code" \
     main.py
 
-echo "==> Empaquetando bundle..."
-cp scripts/install.sh dist/install.sh
-chmod +x dist/install.sh
-tar -czf dist/md2latex-linux.tar.gz -C dist md2latex install.sh
+echo "==> Empaquetando payload..."
+tar -czf /tmp/payload.tar.gz -C dist md2latex
 
-echo "==> Bundle creado: dist/md2latex-linux.tar.gz"
+echo "==> Generando md2latex.bundle..."
+cat > dist/md2latex.bundle << 'HEADER'
+#!/bin/bash
+# md2latex — instalador autoextraíble
+set -e
+
+INSTALL_DIR="/opt/md2latex"
+BIN_LINK="/usr/local/bin/md2latex"
+
+echo "md2LaTeX — instalador"
+echo "====================="
+
+# Extraer payload embebido al final de este script
+TMPDIR=$(mktemp -d)
+SKIP=$(awk '/^__PAYLOAD__$/{print NR+1; exit}' "$0")
+tail -n +"$SKIP" "$0" | tar -xz -C "$TMPDIR"
+
+echo "Instalando en $INSTALL_DIR..."
+sudo mkdir -p "$INSTALL_DIR"
+sudo cp -r "$TMPDIR/md2latex/." "$INSTALL_DIR/"
+sudo chmod +x "$INSTALL_DIR/md2latex"
+sudo ln -sf "$INSTALL_DIR/md2latex" "$BIN_LINK"
+
+rm -rf "$TMPDIR"
+
+echo ""
+echo "Instalación completada."
+echo "Ejecuta 'md2latex' para iniciar la aplicación."
+exit 0
+
+__PAYLOAD__
+HEADER
+
+# Adjuntar el payload binario al final del script
+cat /tmp/payload.tar.gz >> dist/md2latex.bundle
+chmod +x dist/md2latex.bundle
+
+echo "==> Bundle creado: dist/md2latex.bundle"
