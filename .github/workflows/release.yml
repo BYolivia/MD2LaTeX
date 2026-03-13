@@ -1,0 +1,124 @@
+name: Build & Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Instalar dependencias del sistema (tkinter + tcl/tk)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-tk tk-dev tcl-dev
+
+      - name: Instalar dependencias Python
+        run: pip install -r requirements.txt
+
+      - name: Compilar con PyInstaller
+        run: pyinstaller md2latex.spec
+
+      - name: Renombrar ejecutable
+        run: mv dist/md2latex dist/md2latex-linux
+
+      - name: Subir artefacto
+        uses: actions/upload-artifact@v4
+        with:
+          name: md2latex-linux
+          path: dist/md2latex-linux
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Instalar dependencias Python
+        run: pip install -r requirements.txt
+
+      - name: Compilar con PyInstaller
+        run: pyinstaller md2latex.spec
+
+      - name: Subir artefacto
+        uses: actions/upload-artifact@v4
+        with:
+          name: md2latex-windows
+          path: dist/md2latex.exe
+
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Instalar dependencias Python
+        run: pip install -r requirements.txt
+
+      - name: Compilar con PyInstaller
+        run: pyinstaller md2latex.spec
+
+      - name: Renombrar ejecutable
+        run: mv dist/md2latex dist/md2latex-macos
+
+      - name: Subir artefacto
+        uses: actions/upload-artifact@v4
+        with:
+          name: md2latex-macos
+          path: dist/md2latex-macos
+
+  release:
+    needs: [build-linux, build-windows, build-macos]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar artefactos
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+
+      - name: Crear release en GitHub
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "md2LaTeX ${{ github.ref_name }}"
+          body: |
+            ## md2LaTeX ${{ github.ref_name }}
+
+            Conversor bidireccional Markdown ↔ LaTeX con interfaz gráfica.
+
+            ### Descargas
+            | Plataforma | Archivo |
+            |---|---|
+            | Linux (glibc ≥ 2.31 — Debian 11+, Fedora 36+, Arch) | `md2latex-linux` |
+            | Windows | `md2latex-windows.exe` |
+            | macOS | `md2latex-macos` |
+
+            ### Linux — dar permisos de ejecución
+            ```bash
+            chmod +x md2latex-linux
+            ./md2latex-linux
+            ```
+          files: |
+            dist/md2latex-linux/md2latex-linux
+            dist/md2latex-windows/md2latex.exe
+            dist/md2latex-macos/md2latex-macos
+          draft: false
+          prerelease: false

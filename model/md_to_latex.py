@@ -177,6 +177,11 @@ class MdToLatexConverter:
     # ------------------------------------------------------------------
 
     def _inline(self, text: str) -> str:
+        # Tachado ANTES de escapar ~ (el marcador ~~ quedaría roto si se escapa primero)
+        text = re.sub(r"~~(.*?)~~", r"\\sout{\1}", text)
+        # Escapar caracteres especiales LaTeX. Al hacerlo antes de los demás patrones,
+        # el contenido dentro de \textbf{...}, \sout{...}, etc. queda correctamente escapado.
+        text = self._escape_special(text)
         # Negrita e itálica combinadas
         text = re.sub(r"\*\*\*(.*?)\*\*\*", r"\\textbf{\\textit{\1}}", text)
         text = re.sub(r"___(.*?)___", r"\\textbf{\\textit{\1}}", text)
@@ -188,27 +193,18 @@ class MdToLatexConverter:
         text = re.sub(r"_(.*?)_", r"\\textit{\1}", text)
         # Código inline
         text = re.sub(r"`(.*?)`", r"\\texttt{\1}", text)
-        # Tachado
-        text = re.sub(r"~~(.*?)~~", r"\\sout{\1}", text)
         # Imagen: ![alt](url)
         text = re.sub(r"!\[(.*?)\]\((.*?)\)", r"\\includegraphics{\2}", text)
         # Enlace: [text](url)
         text = re.sub(r"\[(.*?)\]\((.*?)\)", r"\\href{\2}{\1}", text)
-        text = self._escape_special(text)
         return text
 
     def _escape_special(self, text: str) -> str:
-        parts = re.split(r"(\\[a-zA-Z]+\{[^}]*\}|\\[a-zA-Z]+)", text)
-        escaped = []
-        for part in parts:
-            if part.startswith("\\"):
-                escaped.append(part)
-            else:
-                part = part.replace("&", "\\&")
-                part = part.replace("%", "\\%")
-                part = part.replace("$", "\\$")
-                part = part.replace("#", "\\#")
-                part = part.replace("^", "\\^{}")
-                part = part.replace("~", "\\textasciitilde{}")
-                escaped.append(part)
-        return "".join(escaped)
+        """Escapa caracteres especiales de LaTeX en texto plano."""
+        text = text.replace("&", "\\&")
+        text = text.replace("%", "\\%")
+        text = text.replace("$", "\\$")
+        text = text.replace("#", "\\#")
+        text = text.replace("^", "\\^{}")
+        text = text.replace("~", "\\textasciitilde{}")
+        return text

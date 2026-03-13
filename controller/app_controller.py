@@ -110,6 +110,19 @@ class AppController:
             self._view.show_error("Error de conversión", str(e))
             self._view.set_html_status(f"Error: {e}")
 
+    def convert_html_to_md(self):
+        try:
+            html_text = self._view.get_html_out_text()
+            if not html_text.strip():
+                self._view.set_html_status("El panel de HTML está vacío.")
+                return
+            result = self._model.html_to_md(html_text)
+            self._view.set_html_md_text(result)
+            self._view.set_html_status("Conversión HTML → MD completada.")
+        except Exception as e:
+            self._view.show_error("Error de conversión", str(e))
+            self._view.set_html_status(f"Error: {e}")
+
     def open_html_md_file(self):
         path = self._view.ask_open_file(self.MD_FILETYPES)
         if not path:
@@ -117,17 +130,41 @@ class AppController:
         try:
             with open(path, "r", encoding="utf-8") as f:
                 content = f.read()
-            self._view._html_md_text.set_text(content)
+            self._view.set_html_md_text(content)
             self._view.set_html_status(f"Archivo cargado: {path}")
         except OSError as e:
             self._view.show_error("Error al abrir archivo", str(e))
+
+    def open_html_file(self):
+        path = self._view.ask_open_file(self.HTML_FILETYPES)
+        if not path:
+            return
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                content = f.read()
+            self._view.set_html_out_text(content)
+            self._view.set_html_status(f"Archivo cargado: {path}")
+        except OSError as e:
+            self._view.show_error("Error al abrir archivo", str(e))
+
+    def save_html_md_file(self):
+        path = self._view.ask_save_file(self.MD_FILETYPES, ".md")
+        if not path:
+            return
+        try:
+            content = self._view.get_html_md_text()
+            with open(path, "w", encoding="utf-8") as f:
+                f.write(content)
+            self._view.set_html_status(f"Archivo guardado: {path}")
+        except OSError as e:
+            self._view.show_error("Error al guardar archivo", str(e))
 
     def save_html_file(self):
         path = self._view.ask_save_file(self.HTML_FILETYPES, ".html")
         if not path:
             return
         try:
-            content = self._view._html_out_text.get_text()
+            content = self._view.get_html_out_text()
             with open(path, "w", encoding="utf-8") as f:
                 f.write(content)
             self._view.set_html_status(f"Archivo guardado: {path}")
@@ -143,6 +180,8 @@ class AppController:
 
     def save_color_config(self, config: LanguageColorConfig) -> str:
         path = config.save()
+        # Recargar configs en todos los paneles para que los colores se reflejen de inmediato
+        self._view.reload_code_configs()
         return str(path)
 
     def delete_color_config(self, language: str) -> bool:

@@ -313,14 +313,17 @@ class LanguageColorsTab:
         ).pack(side=tk.LEFT, padx=6)
         self._font_size_var.trace_add("write", lambda *_: self._on_change())
 
+        # ── Reglas sintácticas ────────────────────────────────────────────
+        self._build_syntax_section(outer)
+
         # ── Vista previa ──────────────────────────────────────────────────
         prev_frame = tk.LabelFrame(
             outer, text=" Vista previa del código LaTeX generado ",
             bg=self.BG_PREVIEW, fg=self.FG_ACCENT,
             font=("Helvetica", 9, "bold"), relief=tk.FLAT,
         )
-        prev_frame.grid(row=2, column=0, sticky=tk.NSEW, pady=(4, 0))
-        outer.rowconfigure(2, weight=0)
+        prev_frame.grid(row=3, column=0, sticky=tk.NSEW, pady=(4, 0))
+        outer.rowconfigure(3, weight=0)
 
         self._preview_text = tk.Text(
             prev_frame,
@@ -341,7 +344,145 @@ class LanguageColorsTab:
             activebackground=self.BTN_ACTIVE, activeforeground=self.FG_ACCENT,
             relief=tk.FLAT, padx=10, pady=3,
             cursor="hand2", font=("Helvetica", 9),
-        ).grid(row=3, column=0, sticky=tk.E, pady=(2, 0))
+        ).grid(row=4, column=0, sticky=tk.E, pady=(2, 0))
+
+    def _build_syntax_section(self, outer: tk.Frame):
+        """Crea la sección de reglas sintácticas (palabras clave, comentarios, strings)."""
+        syn = tk.LabelFrame(
+            outer, text=" Reglas sintácticas (palabras clave, comentarios, strings) ",
+            bg=self.BG_PANEL, fg="#89b4fa",
+            font=("Helvetica", 9, "bold"), relief=tk.FLAT, bd=1,
+        )
+        syn.grid(row=2, column=0, sticky=tk.NSEW, pady=(4, 0))
+        outer.rowconfigure(2, weight=0)
+        syn.columnconfigure(1, weight=1)
+        syn.columnconfigure(3, weight=1)
+
+        note_text = (
+            "Los items se separan con comas. "
+            "Ejemplo keywords: def, class, return, if"
+        )
+        tk.Label(
+            syn, text=note_text,
+            bg=self.BG_PANEL, fg="#6c7086",
+            font=("Helvetica", 8), anchor=tk.W,
+        ).grid(row=0, column=0, columnspan=4, sticky=tk.W, padx=8, pady=(4, 2))
+
+        # ── Fila 1: keyword lists ──────────────────────────────────────────
+        tk.Label(
+            syn, text="Palabras clave:", bg=self.BG_PANEL, fg=self.FG,
+            font=("Helvetica", 9), anchor=tk.NW,
+        ).grid(row=1, column=0, sticky=tk.NW, padx=(8, 4), pady=(4, 2))
+
+        kw_wrap = tk.Frame(syn, bg=self.BG_PANEL)
+        kw_wrap.grid(row=1, column=1, sticky=tk.NSEW, padx=(0, 8), pady=(4, 2))
+        kw_wrap.columnconfigure(0, weight=1)
+
+        self._kw_list_text = tk.Text(
+            kw_wrap, bg="#313244", fg=self.FG,
+            insertbackground=self.FG, font=("Courier New", 9),
+            relief=tk.FLAT, bd=2, height=3, wrap=tk.WORD,
+        )
+        self._kw_list_text.grid(row=0, column=0, sticky=tk.EW)
+        kw_sb = ttk.Scrollbar(kw_wrap, orient=tk.VERTICAL, command=self._kw_list_text.yview)
+        kw_sb.grid(row=0, column=1, sticky=tk.NS)
+        self._kw_list_text.configure(yscrollcommand=kw_sb.set)
+        self._kw_list_text.bind("<KeyRelease>", lambda _: self._on_change())
+
+        tk.Label(
+            syn, text="Tipos/built-ins:", bg=self.BG_PANEL, fg=self.FG,
+            font=("Helvetica", 9), anchor=tk.NW,
+        ).grid(row=1, column=2, sticky=tk.NW, padx=(8, 4), pady=(4, 2))
+
+        kw2_wrap = tk.Frame(syn, bg=self.BG_PANEL)
+        kw2_wrap.grid(row=1, column=3, sticky=tk.NSEW, padx=(0, 8), pady=(4, 2))
+        kw2_wrap.columnconfigure(0, weight=1)
+
+        self._kw2_list_text = tk.Text(
+            kw2_wrap, bg="#313244", fg=self.FG,
+            insertbackground=self.FG, font=("Courier New", 9),
+            relief=tk.FLAT, bd=2, height=3, wrap=tk.WORD,
+        )
+        self._kw2_list_text.grid(row=0, column=0, sticky=tk.EW)
+        kw2_sb = ttk.Scrollbar(kw2_wrap, orient=tk.VERTICAL, command=self._kw2_list_text.yview)
+        kw2_sb.grid(row=0, column=1, sticky=tk.NS)
+        self._kw2_list_text.configure(yscrollcommand=kw2_sb.set)
+        self._kw2_list_text.bind("<KeyRelease>", lambda _: self._on_change())
+
+        # ── Fila 2: comentarios ────────────────────────────────────────────
+        tk.Label(
+            syn, text="Comentario línea:", bg=self.BG_PANEL, fg=self.FG,
+            font=("Helvetica", 9),
+        ).grid(row=2, column=0, sticky=tk.W, padx=(8, 4), pady=4)
+
+        self._comment_line_var = tk.StringVar()
+        tk.Entry(
+            syn, textvariable=self._comment_line_var,
+            bg="#313244", fg=self.FG, insertbackground=self.FG,
+            font=("Courier New", 9), relief=tk.FLAT, bd=4,
+        ).grid(row=2, column=1, sticky=tk.EW, padx=(0, 8), pady=4)
+        self._comment_line_var.trace_add("write", lambda *_: self._on_change())
+
+        tk.Label(
+            syn, text="Comentario bloque:", bg=self.BG_PANEL, fg=self.FG,
+            font=("Helvetica", 9),
+        ).grid(row=2, column=2, sticky=tk.W, padx=(8, 4), pady=4)
+
+        cb_frame = tk.Frame(syn, bg=self.BG_PANEL)
+        cb_frame.grid(row=2, column=3, sticky=tk.W, padx=(0, 8), pady=4)
+
+        self._comment_block_open_var = tk.StringVar()
+        tk.Entry(
+            cb_frame, textvariable=self._comment_block_open_var,
+            bg="#313244", fg=self.FG, insertbackground=self.FG,
+            font=("Courier New", 9), relief=tk.FLAT, bd=4, width=6,
+        ).pack(side=tk.LEFT)
+        tk.Label(cb_frame, text="→", bg=self.BG_PANEL, fg=self.FG,
+                 font=("Helvetica", 9)).pack(side=tk.LEFT, padx=4)
+        self._comment_block_close_var = tk.StringVar()
+        tk.Entry(
+            cb_frame, textvariable=self._comment_block_close_var,
+            bg="#313244", fg=self.FG, insertbackground=self.FG,
+            font=("Courier New", 9), relief=tk.FLAT, bd=4, width=6,
+        ).pack(side=tk.LEFT)
+        self._comment_block_open_var.trace_add("write", lambda *_: self._on_change())
+        self._comment_block_close_var.trace_add("write", lambda *_: self._on_change())
+
+        # ── Fila 3: delimitadores de string + case sensitive ───────────────
+        tk.Label(
+            syn, text="Strings usan:", bg=self.BG_PANEL, fg=self.FG,
+            font=("Helvetica", 9),
+        ).grid(row=3, column=0, sticky=tk.W, padx=(8, 4), pady=(4, 8))
+
+        str_frame = tk.Frame(syn, bg=self.BG_PANEL)
+        str_frame.grid(row=3, column=1, sticky=tk.W, padx=(0, 8), pady=(4, 8))
+
+        self._str_double_var = tk.BooleanVar(value=True)
+        self._str_single_var = tk.BooleanVar(value=True)
+        self._str_backtick_var = tk.BooleanVar(value=False)
+
+        for var, label in (
+            (self._str_double_var,  'Comillas dobles  "'),
+            (self._str_single_var,  "Comillas simples '"),
+            (self._str_backtick_var, "Acento grave     `"),
+        ):
+            tk.Checkbutton(
+                str_frame, text=label, variable=var,
+                command=self._on_change,
+                bg=self.BG_PANEL, fg=self.FG,
+                selectcolor="#313244", activebackground=self.BG_PANEL,
+                font=("Courier New", 9),
+            ).pack(side=tk.LEFT, padx=(0, 10))
+
+        self._case_sensitive_var = tk.BooleanVar(value=True)
+        tk.Checkbutton(
+            syn, text="Distinguir mayúsculas/minúsculas (case sensitive)",
+            variable=self._case_sensitive_var,
+            command=self._on_change,
+            bg=self.BG_PANEL, fg=self.FG,
+            selectcolor="#313244", activebackground=self.BG_PANEL,
+            font=("Helvetica", 9),
+        ).grid(row=3, column=2, columnspan=2, sticky=tk.W, padx=(8, 0), pady=(4, 8))
 
     def _build_statusbar(self):
         bar = tk.Frame(self.frame, bg="#2a2a3d", pady=3)
@@ -386,9 +527,27 @@ class LanguageColorsTab:
         self._bg_color = cfg.background_color
         self._refresh_bg_btn()
         self._font_size_var.set(cfg.font_size)
+        # Reglas sintácticas
+        self._kw_list_text.delete("1.0", tk.END)
+        self._kw_list_text.insert("1.0", ", ".join(cfg.keywords_list))
+        self._kw2_list_text.delete("1.0", tk.END)
+        self._kw2_list_text.insert("1.0", ", ".join(cfg.keywords2_list))
+        self._comment_line_var.set(", ".join(cfg.comment_line))
+        self._comment_block_open_var.set(cfg.comment_block_open)
+        self._comment_block_close_var.set(cfg.comment_block_close)
+        delims = cfg.string_delimiters
+        self._str_double_var.set('"' in delims)
+        self._str_single_var.set("'" in delims)
+        self._str_backtick_var.set("`" in delims)
+        self._case_sensitive_var.set(cfg.case_sensitive)
         self._dirty = False
         self._update_preview()
         self._status_var.set(f"Editando: {cfg.language}")
+
+    @staticmethod
+    def _parse_csv(text: str) -> list[str]:
+        """Parsea texto separado por comas, eliminando espacios extra."""
+        return [x.strip() for x in text.split(",") if x.strip()]
 
     def _build_config_from_form(self) -> LanguageColorConfig:
         return LanguageColorConfig(
@@ -401,6 +560,19 @@ class LanguageColorsTab:
             use_background=self._use_bg_var.get(),
             background_color=self._bg_color,
             font_size=self._font_size_var.get(),
+            keywords_list=self._parse_csv(self._kw_list_text.get("1.0", tk.END)),
+            keywords2_list=self._parse_csv(self._kw2_list_text.get("1.0", tk.END)),
+            comment_line=self._parse_csv(self._comment_line_var.get()),
+            comment_block_open=self._comment_block_open_var.get().strip(),
+            comment_block_close=self._comment_block_close_var.get().strip(),
+            string_delimiters=[
+                d for d, active in (
+                    ('"',  self._str_double_var.get()),
+                    ("'",  self._str_single_var.get()),
+                    ("`",  self._str_backtick_var.get()),
+                ) if active
+            ],
+            case_sensitive=self._case_sensitive_var.get(),
         )
 
     # ------------------------------------------------------------------
@@ -506,7 +678,15 @@ class LanguageColorsTab:
     def _update_preview(self):
         try:
             cfg = self._build_config_from_form()
-            code = cfg.to_latex() if cfg.language else "% Indica el nombre del lenguaje"
+            if not cfg.language:
+                code = "% Indica el nombre del lenguaje"
+            else:
+                from model.latex_languages import build_preamble
+                _, config_block = build_preamble(
+                    {cfg.language},
+                    color_configs={cfg.language.lower(): cfg},
+                )
+                code = config_block
         except Exception as e:
             code = f"% Error: {e}"
         self._preview_text.configure(state=tk.NORMAL)

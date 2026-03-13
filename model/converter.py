@@ -4,6 +4,7 @@ import markdown as _md_lib
 
 from model.md_to_latex import MdToLatexConverter, ConversionResult
 from model.latex_to_md import LatexToMdConverter
+from model.html_to_md import HtmlToMdConverter
 
 _MD_EXTENSIONS = ["tables", "fenced_code", "codehilite", "nl2br", "toc", "attr_list"]
 _MD_EXT_CONFIG = {
@@ -17,12 +18,17 @@ class Converter:
     def __init__(self):
         self._md_to_latex = MdToLatexConverter()
         self._latex_to_md = LatexToMdConverter()
+        self._html_to_md = HtmlToMdConverter()
 
     def md_to_latex(self, text: str, color_configs: dict | None = None) -> ConversionResult:
         return self._md_to_latex.convert(text, color_configs=color_configs)
 
     def latex_to_md(self, text: str) -> str:
         return self._latex_to_md.convert(text)
+
+    def html_to_md(self, html: str) -> str:
+        """Convierte HTML a Markdown."""
+        return self._html_to_md.convert(html)
 
     def md_to_html(self, text: str, full_document: bool = False) -> str:
         """Convierte Markdown a HTML.
