@@ -1,4 +1,5 @@
 """Conversor de HTML a Markdown usando html.parser de stdlib."""
+from __future__ import annotations
 
 from html.parser import HTMLParser
 import re

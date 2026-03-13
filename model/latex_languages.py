@@ -4,6 +4,7 @@ Soporte de lenguajes para el entorno lstlisting de LaTeX.
 Distingue entre lenguajes nativos del paquete listings y lenguajes que
 necesitan una definición personalizada (lstdefinelanguage).
 """
+from __future__ import annotations
 
 from dataclasses import dataclass, field
 

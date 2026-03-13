@@ -70,11 +70,28 @@ sudo cp -r "$TMPDIR/md2latex/." "$INSTALL_DIR/"
 sudo chmod +x "$INSTALL_DIR/md2latex"
 sudo ln -sf "$INSTALL_DIR/md2latex" "$BIN_LINK"
 
+# Icono
+sudo cp "$INSTALL_DIR/_internal/assets/logo.png" /usr/share/pixmaps/md2latex.png 2>/dev/null || true
+
+# Entrada en el menú de aplicaciones
+sudo tee /usr/share/applications/md2latex.desktop > /dev/null << 'DESKTOP'
+[Desktop Entry]
+Name=md2LaTeX
+Comment=Conversor Markdown ↔ LaTeX
+Exec=/usr/local/bin/md2latex
+Icon=md2latex
+Terminal=false
+Type=Application
+Categories=Office;TextEditor;
+Keywords=markdown;latex;converter;
+DESKTOP
+
+sudo update-desktop-database 2>/dev/null || true
 rm -rf "$TMPDIR"
 
 echo ""
 echo "Instalación completada."
-echo "Ejecuta 'md2latex' para iniciar la aplicación."
+echo "Busca 'md2LaTeX' en el menú de aplicaciones o ejecuta 'md2latex'."
 exit 0
 
 __PAYLOAD__
