@@ -1,4 +1,5 @@
 """Vista principal de la aplicación (tkinter)."""
+from __future__ import annotations
 
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox

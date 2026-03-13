@@ -1,4 +1,5 @@
 """Conversor de LaTeX a Markdown."""
+from __future__ import annotations
 
 import re
 

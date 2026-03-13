@@ -1,4 +1,5 @@
 """Fachada del modelo de conversión."""
+from __future__ import annotations
 
 import markdown as _md_lib
 
