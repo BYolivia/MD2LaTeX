@@ -9,36 +9,41 @@ permissions:
   contents: write
 
 jobs:
+  # ── Linux: un job paralelo por distro usando Docker ─────────────────────────
   build-linux:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - distro: arch
+            image: archlinux:latest
+          - distro: debian
+            image: debian:bookworm
+          - distro: fedora
+            image: fedora:latest
+          - distro: ubuntu
+            image: ubuntu:20.04
+
     steps:
       - uses: actions/checkout@v4
 
-      - name: Configurar Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-
-      - name: Instalar dependencias del sistema (tkinter + tcl/tk)
+      - name: Compilar en Docker (${{ matrix.distro }})
         run: |
-          sudo apt-get update
-          sudo apt-get install -y python3-tk tk-dev tcl-dev
+          docker run --rm \
+            -v "$PWD:/workspace" \
+            -w /workspace \
+            ${{ matrix.image }} \
+            bash scripts/build-linux.sh
+          mv dist/md2latex dist/md2latex-linux-${{ matrix.distro }}
 
-      - name: Instalar dependencias Python
-        run: pip install -r requirements.txt
-
-      - name: Compilar con PyInstaller
-        run: pyinstaller md2latex.spec
-
-      - name: Renombrar ejecutable
-        run: mv dist/md2latex dist/md2latex-linux
-
-      - name: Subir artefacto
+      - name: Subir artefacto (${{ matrix.distro }})
         uses: actions/upload-artifact@v4
         with:
-          name: md2latex-linux
-          path: dist/md2latex-linux
+          name: md2latex-linux-${{ matrix.distro }}
+          path: dist/md2latex-linux-${{ matrix.distro }}
 
+  # ── Windows ──────────────────────────────────────────────────────────────────
   build-windows:
     runs-on: windows-latest
     steps:
@@ -61,6 +66,7 @@ jobs:
           name: md2latex-windows
           path: dist/md2latex.exe
 
+  # ── macOS ─────────────────────────────────────────────────────────────────────
   build-macos:
     runs-on: macos-latest
     steps:
@@ -86,11 +92,12 @@ jobs:
           name: md2latex-macos
           path: dist/md2latex-macos
 
+  # ── Release: espera a todos los builds ───────────────────────────────────────
   release:
     needs: [build-linux, build-windows, build-macos]
     runs-on: ubuntu-latest
     steps:
-      - name: Descargar artefactos
+      - name: Descargar todos los artefactos
         uses: actions/download-artifact@v4
         with:
           path: dist
@@ -105,19 +112,26 @@ jobs:
             Conversor bidireccional Markdown ↔ LaTeX con interfaz gráfica.
 
             ### Descargas
+
             | Plataforma | Archivo |
             |---|---|
-            | Linux (glibc ≥ 2.31 — Debian 11+, Fedora 36+, Arch) | `md2latex-linux` |
+            | Linux — Arch | `md2latex-linux-arch` |
+            | Linux — Debian (Bookworm+) | `md2latex-linux-debian` |
+            | Linux — Fedora | `md2latex-linux-fedora` |
+            | Linux — Ubuntu (20.04+) | `md2latex-linux-ubuntu` |
             | Windows | `md2latex-windows.exe` |
             | macOS | `md2latex-macos` |
 
             ### Linux — dar permisos de ejecución
             ```bash
-            chmod +x md2latex-linux
-            ./md2latex-linux
+            chmod +x md2latex-linux-<distro>
+            ./md2latex-linux-<distro>
             ```
           files: |
-            dist/md2latex-linux/md2latex-linux
+            dist/md2latex-linux-arch/md2latex-linux-arch
+            dist/md2latex-linux-debian/md2latex-linux-debian
+            dist/md2latex-linux-fedora/md2latex-linux-fedora
+            dist/md2latex-linux-ubuntu/md2latex-linux-ubuntu
             dist/md2latex-windows/md2latex.exe
             dist/md2latex-macos/md2latex-macos
           draft: false

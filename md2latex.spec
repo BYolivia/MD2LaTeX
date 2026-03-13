@@ -1,8 +1,15 @@
 # -*- mode: python ; coding: utf-8 -*-
 import sys
-from pathlib import Path
 
 block_cipher = None
+
+# Icono por plataforma: Windows requiere .ico, macOS .icns, Linux .png
+if sys.platform == 'win32':
+    _icon = None          # sin icono hasta generar un .ico
+elif sys.platform == 'darwin':
+    _icon = 'assets/logo.png'
+else:
+    _icon = 'assets/logo.png'
 
 a = Analysis(
     ['main.py'],
@@ -54,5 +61,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon='assets/logo.png',
+    icon=_icon,
 )
