@@ -1,5 +1,5 @@
 #!/bin/bash
-# Compila md2latex con PyInstaller dentro del contenedor Docker de cada distro.
+# Compila md2latex como bundle (onedir + tar.gz + install.sh).
 # Detecta el gestor de paquetes automáticamente.
 set -e
 
@@ -26,7 +26,12 @@ python3 -m venv /opt/venv
 echo "==> Instalando dependencias Python..."
 /opt/venv/bin/pip install --quiet pyinstaller markdown tkinterweb
 
-echo "==> Compilando con PyInstaller..."
+echo "==> Compilando con PyInstaller (onedir)..."
 /opt/venv/bin/pyinstaller md2latex.spec
 
-echo "==> Compilación completada."
+echo "==> Empaquetando bundle..."
+cp scripts/install.sh dist/install.sh
+chmod +x dist/install.sh
+tar -czf dist/md2latex-linux.tar.gz -C dist md2latex install.sh
+
+echo "==> Bundle creado: dist/md2latex-linux.tar.gz"

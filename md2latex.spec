@@ -3,13 +3,11 @@ import sys
 
 block_cipher = None
 
-# Icono por plataforma: Windows requiere .ico, macOS .icns, Linux .png
-if sys.platform == 'win32':
-    _icon = None          # sin icono hasta generar un .ico
-elif sys.platform == 'darwin':
-    _icon = 'assets/logo.png'
-else:
-    _icon = 'assets/logo.png'
+# En Linux usamos onedir (bundle tar.gz); en Windows/macOS onefile.
+_onefile = sys.platform != 'linux'
+
+# Icono: Windows requiere .ico (None hasta generarlo), Linux/macOS acepta .png
+_icon = None if sys.platform == 'win32' else 'assets/logo.png'
 
 a = Analysis(
     ['main.py'],
@@ -45,8 +43,8 @@ pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
 exe = EXE(
     pyz,
     a.scripts,
-    a.binaries,
-    a.datas,
+    a.binaries if _onefile else [],
+    a.datas    if _onefile else [],
     [],
     name='md2latex',
     debug=False,
@@ -63,3 +61,15 @@ exe = EXE(
     entitlements_file=None,
     icon=_icon,
 )
+
+# En Linux generamos el directorio con todas las libs (onedir)
+if not _onefile:
+    coll = COLLECT(
+        exe,
+        a.binaries,
+        a.datas,
+        strip=False,
+        upx=True,
+        upx_exclude=[],
+        name='md2latex',
+    )
