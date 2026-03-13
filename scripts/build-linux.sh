@@ -27,7 +27,22 @@ echo "==> Instalando dependencias Python..."
 /opt/venv/bin/pip install --quiet pyinstaller markdown tkinterweb
 
 echo "==> Compilando con PyInstaller (onedir)..."
-/opt/venv/bin/pyinstaller md2latex.spec
+/opt/venv/bin/pyinstaller \
+    --onedir \
+    --name md2latex \
+    --windowed \
+    --add-data "assets:assets" \
+    --add-data "language_colors:language_colors" \
+    --add-data "editor_colors:editor_colors" \
+    --hidden-import tkinter \
+    --hidden-import tkinter.ttk \
+    --hidden-import tkinter.font \
+    --hidden-import tkinterweb \
+    --hidden-import markdown \
+    --hidden-import "markdown.extensions" \
+    --hidden-import "markdown.extensions.tables" \
+    --hidden-import "markdown.extensions.fenced_code" \
+    main.py
 
 echo "==> Empaquetando bundle..."
 cp scripts/install.sh dist/install.sh
